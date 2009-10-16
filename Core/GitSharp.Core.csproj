@@ -372,6 +372,7 @@
     <Compile Include="Util\RawCharSequence.cs" />
     <Compile Include="Util\RawSubstringPattern.cs" />
     <Compile Include="Util\TemporaryBuffer.cs" />
+    <Compile Include="ObjectDecoder.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
