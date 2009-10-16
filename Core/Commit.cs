@@ -236,45 +236,21 @@ namespace GitSharp.Core
 		{
 			if (_raw == null) return;
 
-			using (var reader = new StreamReader(new MemoryStream(_raw)))
+			using (var decoder = new ObjectDecoder(_raw))
 			{
-				string n = reader.ReadLine();
-				if (n == null || !n.StartsWith("tree "))
-				{
-					throw new CorruptObjectException(CommitId, "no tree");
-				}
-				while ((n = reader.ReadLine()) != null && n.StartsWith("parent "))
-				{
-					// empty body
-				}
-				if (n == null || !n.StartsWith("author "))
-				{
-					throw new CorruptObjectException(CommitId, "no author");
-				}
-				string rawAuthor = n.Substring("author ".Length);
-				n = reader.ReadLine();
-				if (n == null || !n.StartsWith("committer "))
-				{
-					throw new CorruptObjectException(CommitId, "no committer");
-				}
-				string rawCommitter = n.Substring("committer ".Length);
-				n = reader.ReadLine();
-
-				if (n != null && n.StartsWith("encoding"))
-				{
-					Encoding = Charset.forName(n.Substring("encoding ".Length));
-				}
-				else if (n == null || n.Length!=0)
-				{
-					throw new CorruptObjectException(CommitId, "malformed header:" + n);
-				}
+				decoder.Read("tree");
+				
+				while (decoder.TryRead("parent") != null) { }
+				string rawAuthor = decoder.Read("author");
+				string rawCommitter = decoder.Read("committer");
+				string rawEncoding = decoder.TryRead("encoding");
 
 #warning This does not currently support custom encodings
 				//byte[] readBuf = new byte[br.available()]; // in-memory stream so this is all bytes left
 				//br.Read(readBuf);
 				//int msgstart = readBuf.Length != 0 ? (readBuf[0] == '\n' ? 1 : 0) : 0;
 
-				if (Encoding != null)
+				if (rawEncoding != null)
 				{
 					// TODO: this isn't reliable so we need to guess the encoding from the actual content
 					throw new NotSupportedException("Custom Encoding is not currently supported.");
@@ -287,7 +263,7 @@ namespace GitSharp.Core
 				_author = new PersonIdent(rawAuthor);
 				_committer = new PersonIdent(rawCommitter);
 				//_message = new string(readBuf, msgstart, readBuf.Length - msgstart);
-				_message = reader.ReadToEnd();
+				_message = decoder.ReadToEnd();
 			}
 
 			_raw = null;
